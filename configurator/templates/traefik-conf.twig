@@ -1,0 +1,101 @@
+tls:
+{% if TLS_CERT and TLS_KEY %}
+  certificates:
+    - certFile: {{ TLS_CERT }}
+      keyFile: {{ TLS_KEY }}
+{% endif %}
+{% if TLS_CA_CERT %}
+  options:
+    caAuth:
+      clientAuth:
+        caFiles:
+          - {{ TLS_CA_CERT }}
+        clientAuthType: RequireAndVerifyClientCert
+{% endif %}
+
+http:
+  middlewares:
+    noServerInfo:
+      headers:
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+    forceHttps:
+      redirectScheme:
+        scheme: https
+    compressGzip:
+      compress: {}
+
+  services:
+{% for vhostName, vhost in vhosts %}
+    service_{{ vhostName|lower }}:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "{{ vhost.PROXY_URL }}"
+{% endfor %}
+
+  routers:
+
+{% if DASHBOARD_HOSTNAME %}
+    router-dashboard:
+      rule: "Host(`{{ DASHBOARD_HOSTNAME }}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      service: api@internal
+      entryPoints:
+        - web-secure
+      tls: { options: "caAuth" }
+{% endif %}
+
+{% for vhostName, vhost in vhosts %}
+    router{{ vhostName|lower }}-https:
+      rule: "{{ _self.getExpression(vhostName, vhost) | spaceless }}"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - "compressGzip"
+        {% if NO_SERVER_INFO != 'false' %}- "noServerInfo"{% endif %}
+
+      service: service_{{ vhostName|lower }}
+{% if vhost.PRIORITY %}
+      priority: {{ vhost.PRIORITY }}
+{% endif %}
+      tls: {% if certResolver %}{ certResolver: "{{ certResolver }}"}{% elseif vhost.CACERT %}{ options: "caAuth" }{% else %}{}{% endif %}
+
+{# add rule for hosts that want a mtls auth ca cert #}
+{% if CA_CERT_PREFIXES %}
+    router{{ vhostName|lower }}-https-ca:
+      rule: "{{ _self.getExpression(vhostName, vhost) | spaceless }} && ({{ _self.getTlsCaHosts(CA_CERT_PREFIXES) | spaceless }})"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - "compressGzip"
+        {% if NO_SERVER_INFO == 'true' %}- "noServerInfo"{% endif %}
+
+      service: service_{{ vhostName|lower }}
+      tls:
+        options: "caAuth"
+{% endif %}
+
+    router{{ vhostName|lower }}-http:
+      rule: "{{ _self.getExpression(vhostName, vhost) | spaceless }}"
+      entryPoints:
+        - web
+      middlewares:
+        - "forceHttps"
+      service: service_{{ vhostName|lower }}
+
+{% endfor %}
+
+{% macro getExpression(vhostName, vhost) %}
+    {% if vhost.SERVERNAME %}
+        Host(`{{ vhost.SERVERNAME }}`)
+    {% elseif vhost.REGEXP %}
+        HostRegexp(`{{ vhost.REGEXP|replace({'*': '{subdomain:.+}'}) }}`)
+    {% endif %}
+{% endmacro %}
+
+{% macro getTlsCaHosts(prefixList) %}{% spaceless %}
+{% set listItems = [] %}
+{% for prefix in prefixList|split(',') %}{% set listItems = listItems|merge([ 'HostRegexp(`' ~ prefix ~ '{domain:.+}`)' ]) %}{% endfor %}
+{{ listItems|join('||') }}
+{% endspaceless %}{% endmacro %}

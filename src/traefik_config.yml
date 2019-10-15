@@ -1,0 +1,40 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+providers:
+  file:
+    filename: /traefik/traefik.yml
+    watch: false
+
+api:
+  insecure: true
+  dashboard: true
+  {{ if .DEBUG }}debug: true{{ end }}
+
+{{ if .ACCESS_LOG }}
+accessLog:
+  filePath: "{{ .ACCESS_LOG }}"
+{{ end }}
+
+{{ if .DEBUG }}
+log:
+  level: DEBUG
+{{ end }}
+
+entryPoints:
+  web:
+    address: ":9080"
+  web-secure:
+    address: ":9443"
+
+{{ if .ACME }}
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "{{ .ACME_EMAIL }}"
+      storage: "{{ .ACME_STORAGE }}"
+      httpChallenge:
+        # used during the challenge
+        entryPoint: web
+{{ end }}
