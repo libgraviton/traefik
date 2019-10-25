@@ -76,6 +76,7 @@ http:
         options: "caAuth"
 {% endif %}
 
+{% if GENERATE_HTTP_ROUTES == "true" %}
     router{{ vhostName|lower }}-http:
       rule: "{{ _self.getExpression(vhostName, vhost) | spaceless }}"
       entryPoints:
@@ -83,6 +84,7 @@ http:
       middlewares:
         - "forceHttps"
       service: service_{{ vhostName|lower }}
+{% endif %}
 
 {% endfor %}
 
