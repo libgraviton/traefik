@@ -26,7 +26,7 @@ RUN apt-get update -y && \
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-amd64 /tini
 ADD https://github.com/libgraviton/goenvsubst/releases/download/v${GOENVSUBST_VERSION}/goenvsubst-amd64 /envsubst
 
-COPY --from=traefik:2.0 /usr/local/bin/traefik /traefik/traefik
+COPY --from=traefik:2.1 /usr/local/bin/traefik /traefik/traefik
 
 # our configurator
 COPY --from=0 /app /opt/configurator
