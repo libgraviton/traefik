@@ -11,6 +11,7 @@ LABEL TAG=${TAG}
 
 ENV ACME_EMAIL="test@example.com"
 ENV ACME_STORAGE="/traefik/acme.json"
+ENV GENERATE_HTTP_ROUTES="true"
 
 ENV TINI_VERSION=0.18.0
 ENV GOENVSUBST_VERSION=0.2.0
@@ -25,7 +26,7 @@ RUN apt-get update -y && \
 ADD https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-amd64 /tini
 ADD https://github.com/libgraviton/goenvsubst/releases/download/v${GOENVSUBST_VERSION}/goenvsubst-amd64 /envsubst
 
-COPY --from=traefik:2.0 /usr/local/bin/traefik /traefik/traefik
+COPY --from=traefik:2.1 /usr/local/bin/traefik /traefik/traefik
 
 # our configurator
 COPY --from=0 /app /opt/configurator
