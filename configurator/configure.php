@@ -8,22 +8,20 @@ use Twig\Loader\FilesystemLoader;
 /**
  * for dev purposes
  */
-
 /*
 $_ENV = [
     'VHOST_HANS_PROXY_URL' => 'http://dude:80',
-    //'VHOST_HANS_SERVERNAME' => 'hans.${DOMAIN}',
-    'VHOST_HANS_REGEXP' => '*.fred.vcap.me',
+    'VHOST_HANS_SERVERNAME' => 'hans.${DOMAIN}',
+    //'VHOST_HANS_REGEXP' => '*.fred.vcap.me',
     'VHOST_HANS_CACERT' => true,
+
+    'ACME' => 'true',
 
     'TLS_KEY' => '/tls.key',
     'TLS_CERT' => '/tls.crt',
 
-    //'CA_CERT_PREFIXES' => 'mongoui,jenkins'
-
 ];
 */
-
 
 $vhostPrefix = 'VHOST_';
 $vhosts = [];
@@ -41,9 +39,6 @@ foreach ($_ENV as $envName => $envValue) {
 }
 
 $_ENV['vhosts'] = $vhosts;
-
-//var_dump($_ENV);
-
 
 $environment = array_merge($_ENV, []);
 

@@ -59,21 +59,14 @@ http:
 {% if vhost.PRIORITY %}
       priority: {{ vhost.PRIORITY }}
 {% endif %}
-      tls: {% if certResolver %}{ certResolver: "{{ certResolver }}"}{% elseif vhost.CACERT %}{ options: "caAuth" }{% else %}{}{% endif %}
 
-{# add rule for hosts that want a mtls auth ca cert #}
-{% if CA_CERT_PREFIXES %}
-    router{{ vhostName|lower }}-https-ca:
-      rule: "{{ _self.getExpression(vhostName, vhost) | spaceless }} && ({{ _self.getTlsCaHosts(CA_CERT_PREFIXES) | spaceless }})"
-      entryPoints:
-        - web-secure
-      middlewares:
-        - "compressGzip"
-        {% if NO_SERVER_INFO == 'true' %}- "noServerInfo"{% endif %}
-
-      service: service_{{ vhostName|lower }}
+{# tls options #}
       tls:
+{% if vhost.CACERT %}
         options: "caAuth"
+{% endif %}
+{% if ACME == 'true' %}
+        certResolver: "letsencrypt"
 {% endif %}
 
 {% if GENERATE_HTTP_ROUTES == "true" %}
@@ -95,9 +88,3 @@ http:
         HostRegexp(`{{ vhost.REGEXP|replace({'*': '{subdomain:.+}'}) }}`)
     {% endif %}
 {% endmacro %}
-
-{% macro getTlsCaHosts(prefixList) %}{% spaceless %}
-{% set listItems = [] %}
-{% for prefix in prefixList|split(',') %}{% set listItems = listItems|merge([ 'HostRegexp(`' ~ prefix ~ '{domain:.+}`)' ]) %}{% endfor %}
-{{ listItems|join('||') }}
-{% endspaceless %}{% endmacro %}
