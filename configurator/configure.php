@@ -18,12 +18,12 @@ $_ENV = [
     'VHOST_HANS_BASICAUTH' => 'BASIC',
 
     'ACME' => 'true',
+    'NO_SERVER_INFO' => 'true',
 
     'TLS_KEY' => '/tls.key',
     'TLS_CERT' => '/tls.crt',
 
     'BASICAUTH_BASIC' => 'hhh:hhh'
-
 ];
 */
 

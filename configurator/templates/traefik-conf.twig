@@ -60,9 +60,12 @@ http:
         - web-secure
       middlewares:
         - "compressGzip"
-        {% if not vhost.BASICAUTH is empty %}- "basicAuth_{{ vhost.BASICAUTH|lower }}"
+{% if not vhost.BASICAUTH is empty %}
+        - "basicAuth_{{ vhost.BASICAUTH|lower }}"
 {% endif %}
-        {% if NO_SERVER_INFO != 'false' %}- "noServerInfo"{% endif %}
+{% if NO_SERVER_INFO != 'false' %}
+        - "noServerInfo"
+{% endif %}
 
       service: service_{{ vhostName|lower }}
 {% if vhost.PRIORITY %}
