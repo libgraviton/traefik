@@ -25,6 +25,13 @@ http:
         scheme: https
     compressGzip:
       compress: {}
+{% for basicAuthName, passwd in basicAuths %}
+    basicAuth_{{ basicAuthName|lower }}:
+      basicAuth:
+        removeHeader: true
+        users:
+          - "{{ passwd }}"
+{% endfor %}
 
   services:
 {% for vhostName, vhost in vhosts %}
@@ -53,6 +60,8 @@ http:
         - web-secure
       middlewares:
         - "compressGzip"
+        {% if not vhost.BASICAUTH is empty %}- "basicAuth_{{ vhost.BASICAUTH|lower }}"
+{% endif %}
         {% if NO_SERVER_INFO != 'false' %}- "noServerInfo"{% endif %}
 
       service: service_{{ vhostName|lower }}
